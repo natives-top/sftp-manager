@@ -3,6 +3,7 @@ out/
 release/
 dist/
 build/
+!build/icon.ico
 .env
 .DS_Store
 *.log
