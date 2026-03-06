@@ -7,7 +7,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { formatBytes } from './lib/utils'
 import { useTranslation } from 'react-i18next'
 import { v4 as uuidv4 } from 'uuid'
-import { Server, Folder, File as FileIcon, ArrowUp, RefreshCcw, Download, Upload, Trash2, Plug, Play, Plus, Loader2, FolderPlus, FileUp, XCircle, CheckCircle2, Globe } from 'lucide-react'
+import { Server, Folder, File as FileIcon, ArrowUp, ArrowUpDown, ArrowDownAZ, ArrowUpAZ, RefreshCcw, Download, Upload, Trash2, Plug, Play, Plus, Loader2, FolderPlus, FileUp, XCircle, CheckCircle2, Globe, ChevronUp, ChevronDown } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { TransferTask } from './lib/types'
 
@@ -35,6 +35,12 @@ export default function App() {
 
   // Confirm Delete State
   const [confirmDeleteFile, setConfirmDeleteFile] = useState<any | null>(null)
+
+  // Sort State
+  type SortKey = 'name' | 'size' | 'modifyTime'
+  type SortDir = 'asc' | 'desc'
+  const [sortKey, setSortKey] = useState<SortKey>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   // Load history on mount
   useEffect(() => {
@@ -268,6 +274,42 @@ export default function App() {
     setTasks(prev => prev.filter(t => t.status !== 'completed' && t.status !== 'error'))
   }
 
+  // Sort files: directories first, then by sortKey/sortDir
+  const sortedFiles = React.useMemo(() => {
+    const sorted = [...files].sort((a, b) => {
+      // directories always come first
+      if (a.type === 'd' && b.type !== 'd') return -1
+      if (a.type !== 'd' && b.type === 'd') return 1
+
+      let cmp = 0
+      if (sortKey === 'name') {
+        cmp = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+      } else if (sortKey === 'size') {
+        cmp = (a.size || 0) - (b.size || 0)
+      } else if (sortKey === 'modifyTime') {
+        cmp = new Date(a.modifyTime).getTime() - new Date(b.modifyTime).getTime()
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+    return sorted
+  }, [files, sortKey, sortDir])
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortKey !== column) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />
+    return sortDir === 'asc' 
+      ? <ChevronUp className="h-3 w-3 ml-1" /> 
+      : <ChevronDown className="h-3 w-3 ml-1" />
+  }
+
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
       {/* Sidebar */}
@@ -420,13 +462,19 @@ export default function App() {
                   <table className="min-w-full text-sm">
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
-                        <th className="px-4 py-3 text-left font-medium text-muted-foreground w-1/2">{t('Name')}</th>
-                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('Size')}</th>
-                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('Modified')}</th>
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground w-1/2 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('name')}>
+                          <span className="inline-flex items-center">{t('Name')}<SortIcon column="name" /></span>
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('size')}>
+                          <span className="inline-flex items-center">{t('Size')}<SortIcon column="size" /></span>
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('modifyTime')}>
+                          <span className="inline-flex items-center">{t('Modified')}<SortIcon column="modifyTime" /></span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {files.map((file, i) => (
+                      {sortedFiles.map((file, i) => (
                         <ContextMenu key={i}>
                           <ContextMenuTrigger asChild>
                             <tr 
