@@ -48,5 +48,10 @@
   "Delete success": "删除成功",
   "Mkdir failed": "创建文件夹失败",
   "Mkdir success": "创建文件夹成功",
-  "unknown": "未知"
+  "unknown": "未知",
+  "Bookmark": "标签",
+  "Bookmark added": "标签已添加",
+  "Bookmark exists": "标签已存在",
+  "Bookmark removed": "标签已移除",
+  "Bookmarks": "标签列表"
 }

@@ -19,7 +19,10 @@ try {
     store: {
       getConnections: () => ipcRenderer.invoke('store:getConnections'),
       saveConnection: (config: any) => ipcRenderer.invoke('store:saveConnection', config),
-      deleteConnection: (id: string) => ipcRenderer.invoke('store:deleteConnection', id)
+      deleteConnection: (id: string) => ipcRenderer.invoke('store:deleteConnection', id),
+      getBookmarks: (connectionId: string) => ipcRenderer.invoke('store:getBookmarks', connectionId),
+      addBookmark: (bookmark: any) => ipcRenderer.invoke('store:addBookmark', bookmark),
+      deleteBookmark: (connectionId: string, bookmarkId: string) => ipcRenderer.invoke('store:deleteBookmark', connectionId, bookmarkId)
     },
     crypto: {
       encrypt: (text: string) => ipcRenderer.invoke('crypto:encrypt', text),

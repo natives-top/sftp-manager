@@ -48,5 +48,10 @@
   "Delete success": "Delete success",
   "Mkdir failed": "Mkdir failed",
   "Mkdir success": "Folder created",
-  "unknown": "unknown"
+  "unknown": "unknown",
+  "Bookmark": "Bookmark",
+  "Bookmark added": "Bookmark added",
+  "Bookmark exists": "Bookmark already exists",
+  "Bookmark removed": "Bookmark removed",
+  "Bookmarks": "Bookmarks"
 }

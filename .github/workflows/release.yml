@@ -20,17 +20,17 @@ jobs:
             platform: win
             script: dist:win
             artifact_name: sftp-manager-windows
-            artifact_path: release/现代化 SFTP 文件管理.exe
+            artifact_path: release/现代化 SFTP 文件管理-*-*.exe
           - os: macos-latest
             platform: mac
             script: dist:mac
             artifact_name: sftp-manager-mac
-            artifact_path: release/*.dmg
+            artifact_path: release/现代化 SFTP 文件管理-*-mac.dmg
           - os: ubuntu-latest
             platform: linux
             script: dist:linux
             artifact_name: sftp-manager-linux
-            artifact_path: release/*.AppImage
+            artifact_path: release/现代化 SFTP 文件管理-*-linux.AppImage
 
     runs-on: ${{ matrix.os }}
 
@@ -84,9 +84,9 @@ jobs:
 
             | 平台 | 文件 | 说明 |
             |------|------|------|
-            | Windows | `现代化 SFTP 文件管理.exe` | 双击即可运行，无需安装 |
-            | macOS | `.dmg` | 打开后拖入 Applications |
-            | Linux | `.AppImage` | `chmod +x` 后直接运行 |
+            | Windows | `现代化 SFTP 文件管理-{version}.exe` | 双击即可运行，无需安装 |
+            | macOS | `现代化 SFTP 文件管理-{version}-mac.dmg` | 打开后拖入 Applications |
+            | Linux | `现代化 SFTP 文件管理-{version}-linux.AppImage` | `chmod +x` 后直接运行 |
 
             ### 更新内容
             请查看 [Commits](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) 了解详情。

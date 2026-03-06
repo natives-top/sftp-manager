@@ -1,6 +1,6 @@
 {
   "name": "sftp-modern-manager",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Modern SFTP File Manager MVP",
   "main": "./out/main/index.js",
   "author": "OpenCode",
@@ -32,17 +32,17 @@
       "target": [
         "dmg"
       ],
-      "artifactName": "SFTP-Manager-${version}-mac.${ext}"
+      "artifactName": "现代化 SFTP 文件管理-${version}-mac.${ext}"
     },
     "linux": {
       "icon": "build/icon.png",
       "target": [
         "AppImage"
       ],
-      "artifactName": "SFTP-Manager-${version}-linux.${ext}"
+      "artifactName": "现代化 SFTP 文件管理-${version}-linux.${ext}"
     },
     "portable": {
-      "artifactName": "现代化 SFTP 文件管理.exe"
+      "artifactName": "现代化 SFTP 文件管理-${version}.exe"
     }
   },
   "dependencies": {

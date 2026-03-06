@@ -7,9 +7,9 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { formatBytes } from './lib/utils'
 import { useTranslation } from 'react-i18next'
 import { v4 as uuidv4 } from 'uuid'
-import { Server, Folder, File as FileIcon, ArrowUp, ArrowUpDown, ArrowDownAZ, ArrowUpAZ, RefreshCcw, Download, Upload, Trash2, Plug, Play, Plus, Loader2, FolderPlus, FileUp, XCircle, CheckCircle2, Globe, ChevronUp, ChevronDown } from 'lucide-react'
+import { Server, Folder, File as FileIcon, ArrowUp, ArrowUpDown, ArrowDownAZ, ArrowUpAZ, RefreshCcw, Download, Upload, Trash2, Plug, Play, Plus, Loader2, FolderPlus, FileUp, XCircle, CheckCircle2, Globe, ChevronUp, ChevronDown, Tag, X } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
-import { TransferTask } from './lib/types'
+import { TransferTask, Bookmark } from './lib/types'
 
 export default function App() {
   const { t, i18n } = useTranslation()
@@ -28,6 +28,9 @@ export default function App() {
   
   // Tasks State
   const [tasks, setTasks] = useState<TransferTask[]>([])
+
+  // Bookmarks State
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
 
   // New Folder State
   const [showNewFolder, setShowNewFolder] = useState(false)
@@ -98,6 +101,8 @@ export default function App() {
     setLoading(false)
     if (res.success) {
       setActiveConnection(config)
+      const bm = await window.electron.store.getBookmarks(config.id)
+      setBookmarks(bm || [])
       loadFiles('/')
     } else {
       toast.error(t('Failed to connect') + ': ' + res.error)
@@ -110,6 +115,7 @@ export default function App() {
     setActiveConnection(null)
     setFiles([])
     setTasks([])
+    setBookmarks([])
   }
 
   const loadFiles = async (path: string) => {
@@ -274,6 +280,34 @@ export default function App() {
     setTasks(prev => prev.filter(t => t.status !== 'completed' && t.status !== 'error'))
   }
 
+  const handleAddBookmark = async (file: any) => {
+    if (!activeConnection) return
+    const fullPath = currentPath.endsWith('/') ? currentPath + file.name : currentPath + '/' + file.name
+    // Check if bookmark already exists for this path
+    const exists = bookmarks.some(b => b.path === fullPath)
+    if (exists) {
+      toast.info(t('Bookmark exists'))
+      return
+    }
+    const bookmark: Bookmark = {
+      id: uuidv4(),
+      connectionId: activeConnection.id,
+      name: file.name,
+      path: fullPath,
+      isDirectory: file.type === 'd'
+    }
+    await window.electron.store.addBookmark(bookmark)
+    setBookmarks(prev => [...prev, bookmark])
+    toast.success(t('Bookmark added'))
+  }
+
+  const handleDeleteBookmark = async (bookmarkId: string) => {
+    if (!activeConnection) return
+    await window.electron.store.deleteBookmark(activeConnection.id, bookmarkId)
+    setBookmarks(prev => prev.filter(b => b.id !== bookmarkId))
+    toast.success(t('Bookmark removed'))
+  }
+
   // Sort files: directories first, then by sortKey/sortDir
   const sortedFiles = React.useMemo(() => {
     const sorted = [...files].sort((a, b) => {
@@ -332,23 +366,61 @@ export default function App() {
             <h3 className="text-sm font-medium mb-3 text-muted-foreground">{t('History')}</h3>
             <div className="space-y-2">
               {connections.map(conn => (
-                <div 
-                  key={conn.id} 
-                  className={`flex items-center justify-between p-3 rounded-md cursor-pointer border transition-colors ${
-                    activeConnection?.id === conn.id ? 'bg-primary/10 border-primary' : 'bg-card hover:bg-accent/50'
-                  }`}
-                  onClick={() => !loading && handleConnect(conn)}
-                >
-                  <div className="flex items-center space-x-3 overflow-hidden">
-                    <Server className={`h-4 w-4 flex-shrink-0 ${activeConnection?.id === conn.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <div className="truncate">
-                      <div className="text-sm font-medium truncate">{conn.alias || conn.host}</div>
-                      <div className="text-xs text-muted-foreground truncate">{conn.username}@{conn.host}</div>
+                <div key={conn.id}>
+                  <div 
+                    className={`flex items-center justify-between p-3 rounded-md cursor-pointer border transition-colors ${
+                      activeConnection?.id === conn.id ? 'bg-primary/10 border-primary' : 'bg-card hover:bg-accent/50'
+                    }`}
+                    onClick={() => !loading && handleConnect(conn)}
+                  >
+                    <div className="flex items-center space-x-3 overflow-hidden">
+                      <Server className={`h-4 w-4 flex-shrink-0 ${activeConnection?.id === conn.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <div className="truncate">
+                        <div className="text-sm font-medium truncate">{conn.alias || conn.host}</div>
+                        <div className="text-xs text-muted-foreground truncate">{conn.username}@{conn.host}</div>
+                      </div>
                     </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive flex-shrink-0" onClick={(e) => handleDeleteConnection(conn.id, e)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive flex-shrink-0" onClick={(e) => handleDeleteConnection(conn.id, e)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {/* Bookmarks for this connection */}
+                  {activeConnection?.id === conn.id && bookmarks.length > 0 && (
+                    <div className="ml-4 mt-1 mb-1 space-y-1">
+                      <div className="text-xs text-muted-foreground font-medium flex items-center px-1 py-0.5">
+                        <Tag className="h-3 w-3 mr-1" />{t('Bookmarks')}
+                      </div>
+                      {bookmarks.map(bm => (
+                        <div 
+                          key={bm.id}
+                          className="flex items-center justify-between group px-2 py-1 rounded hover:bg-accent/50 cursor-pointer text-xs"
+                          onClick={() => {
+                            if (bm.isDirectory) {
+                              loadFiles(bm.path)
+                            } else {
+                              // Navigate to the parent directory of the bookmarked file
+                              const parent = bm.path.split('/').slice(0, -1).join('/') || '/'
+                              loadFiles(parent)
+                            }
+                          }}
+                          title={bm.path}
+                        >
+                          <div className="flex items-center space-x-1.5 overflow-hidden">
+                            {bm.isDirectory ? <Folder className="h-3 w-3 text-blue-500 flex-shrink-0" /> : <FileIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                            <span className="truncate">{bm.name}</span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-4 w-4 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive flex-shrink-0"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteBookmark(bm.id) }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               {connections.length === 0 && (
@@ -501,6 +573,10 @@ export default function App() {
                             <ContextMenuItem onClick={() => handleDownload(file)}>
                               <Download className="mr-2 h-4 w-4" />
                               <span>{t('Download')}</span>
+                            </ContextMenuItem>
+                            <ContextMenuItem onClick={() => handleAddBookmark(file)}>
+                              <Tag className="mr-2 h-4 w-4" />
+                              <span>{t('Bookmark')}</span>
                             </ContextMenuItem>
                             <ContextMenuItem onClick={() => handleDelete(file)} className="text-destructive">
                               <Trash2 className="mr-2 h-4 w-4" />

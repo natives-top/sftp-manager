@@ -10,3 +10,11 @@ export type TransferTask = {
   transferredSize: number;
   error?: string;
 };
+
+export type Bookmark = {
+  id: string;
+  connectionId: string;
+  name: string;
+  path: string;
+  isDirectory: boolean;
+};

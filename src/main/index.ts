@@ -99,6 +99,19 @@ app.whenReady().then(() => {
     return storeService.deleteConnection(id);
   });
 
+  // Bookmarks
+  ipcMain.handle('store:getBookmarks', (_, connectionId) => {
+    return storeService.getBookmarks(connectionId);
+  });
+
+  ipcMain.handle('store:addBookmark', (_, bookmark) => {
+    return storeService.addBookmark(bookmark);
+  });
+
+  ipcMain.handle('store:deleteBookmark', (_, connectionId, bookmarkId) => {
+    return storeService.deleteBookmark(connectionId, bookmarkId);
+  });
+
   ipcMain.handle('crypto:encrypt', (_, text) => {
     return cryptoService.encrypt(text);
   });
