@@ -4,6 +4,7 @@ release/
 dist/
 build/
 !build/icon.ico
+!build/icon.png
 .env
 .DS_Store
 *.log
