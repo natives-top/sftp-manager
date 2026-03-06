@@ -3,16 +3,36 @@ name: Build & Release
 on:
   push:
     tags:
-      - 'v*'          # 推送 v 开头的 tag 时触发，例如 v1.0.0
-  workflow_dispatch:   # 支持手动触发
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build Portable EXE
-    runs-on: windows-latest
+    name: Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            script: dist:win
+            artifact_name: sftp-manager-windows
+            artifact_path: release/现代化 SFTP 文件管理.exe
+          - os: macos-latest
+            platform: mac
+            script: dist:mac
+            artifact_name: sftp-manager-mac
+            artifact_path: release/*.dmg
+          - os: ubuntu-latest
+            platform: linux
+            script: dist:linux
+            artifact_name: sftp-manager-linux
+            artifact_path: release/*.AppImage
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -28,30 +48,52 @@ jobs:
         run: npm ci
 
       - name: Build & Package
-        run: npm run dist
+        run: npm run ${{ matrix.script }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sftp-manager-portable
-          path: release/现代化 SFTP 文件管理.exe
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
 
-      - name: Create GitHub Release & Upload EXE
-        if: startsWith(github.ref, 'refs/tags/v')
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: 现代化 SFTP 文件管理 ${{ github.ref_name }}
           body: |
             ## 现代化 SFTP 文件管理 ${{ github.ref_name }}
 
-            ### 使用方式
-            下载下方 `现代化.SFTP.文件管理.exe`，双击即可运行，无需安装。
+            ### 下载
+
+            | 平台 | 文件 | 说明 |
+            |------|------|------|
+            | Windows | `现代化 SFTP 文件管理.exe` | 双击即可运行，无需安装 |
+            | macOS | `.dmg` | 打开后拖入 Applications |
+            | Linux | `.AppImage` | `chmod +x` 后直接运行 |
 
             ### 更新内容
             请查看 [Commits](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) 了解详情。
-          files: release/现代化 SFTP 文件管理.exe
+          files: |
+            artifacts/sftp-manager-windows/*
+            artifacts/sftp-manager-mac/*
+            artifacts/sftp-manager-linux/*
           draft: false
           prerelease: false
         env:

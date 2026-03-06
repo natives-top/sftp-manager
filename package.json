@@ -10,7 +10,10 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "dist": "npm run build && electron-builder --win --x64"
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win --x64",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux"
   },
   "build": {
     "appId": "com.sftp.modernmanager",
@@ -23,6 +26,20 @@
       "target": [
         "portable"
       ]
+    },
+    "mac": {
+      "icon": "build/icon.ico",
+      "target": [
+        "dmg"
+      ],
+      "artifactName": "SFTP-Manager-${version}-mac.${ext}"
+    },
+    "linux": {
+      "icon": "build/icon.ico",
+      "target": [
+        "AppImage"
+      ],
+      "artifactName": "SFTP-Manager-${version}-linux.${ext}"
     },
     "portable": {
       "artifactName": "现代化 SFTP 文件管理.exe"
