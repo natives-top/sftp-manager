@@ -77,7 +77,7 @@
     "@types/ssh2-sftp-client": "^9.0.3",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "7zip-bin-win": "^2.2.0",
+    "7zip-bin": "^5.2.0",
     "autoprefixer": "^10.4.18",
     "cross-env": "^10.1.0",
     "electron": "^29.1.0",
@@ -88,7 +88,6 @@
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
-    "vite": "^5.1.4",
-    "win-node-env": "^0.6.1"
+    "vite": "^5.1.4"
   }
 }
