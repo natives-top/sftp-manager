@@ -88,6 +88,12 @@ jobs:
             | macOS | `现代化 SFTP 文件管理-{version}-mac.dmg` | 打开后拖入 Applications |
             | Linux | `现代化 SFTP 文件管理-{version}-linux.AppImage` | `chmod +x` 后直接运行 |
 
+            ### 特性
+            - 支持 SFTP 文件管理（上传/下载/删除/创建文件夹）
+            - 路径别名功能 - 为书签添加自定义别名
+            - 完整的中英文界面支持
+            - 跨平台支持（Windows/macOS/Linux）
+
             ### 更新内容
             请查看 [Commits](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) 了解详情。
           files: |
