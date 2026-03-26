@@ -53,5 +53,9 @@
   "Bookmark added": "Bookmark added",
   "Bookmark exists": "Bookmark already exists",
   "Bookmark removed": "Bookmark removed",
-  "Bookmarks": "Bookmarks"
+  "Bookmarks": "Bookmarks",
+  "Path Alias": "Path Alias",
+  "Optional alias for this path": "Optional alias for this path",
+  "Edit Alias": "Edit Alias",
+  "Remove Alias": "Remove Alias"
 }

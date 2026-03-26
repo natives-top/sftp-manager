@@ -15,6 +15,9 @@ export interface IElectronAPI {
     getConnections: () => Promise<any[]>
     saveConnection: (config: any) => Promise<any[]>
     deleteConnection: (id: string) => Promise<any[]>
+    getBookmarks: (connectionId: string) => Promise<any[]>
+    addBookmark: (bookmark: any) => Promise<void>
+    deleteBookmark: (connectionId: string, bookmarkId: string) => Promise<void>
   },
   crypto: {
     encrypt: (text: string) => Promise<string>

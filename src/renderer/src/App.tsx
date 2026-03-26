@@ -29,15 +29,24 @@ export default function App() {
   // Tasks State
   const [tasks, setTasks] = useState<TransferTask[]>([])
 
-  // Bookmarks State
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
+   // Bookmarks State
+   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
 
-  // New Folder State
-  const [showNewFolder, setShowNewFolder] = useState(false)
-  const [newFolderName, setNewFolderName] = useState('')
+    // Edit Bookmark Alias State
+    const [editingAliasBookmark, setEditingAliasBookmark] = useState<Bookmark | null>(null)
+    const [aliasInputValue, setAliasInputValue] = useState('')
 
-  // Confirm Delete State
-  const [confirmDeleteFile, setConfirmDeleteFile] = useState<any | null>(null)
+    // Add Bookmark with Alias State
+    const [showAddBookmarkDialog, setShowAddBookmarkDialog] = useState(false)
+    const [pendingBookmarkFile, setPendingBookmarkFile] = useState<any | null>(null)
+    const [bookmarkAliasInput, setBookmarkAliasInput] = useState('')
+
+    // New Folder State
+   const [showNewFolder, setShowNewFolder] = useState(false)
+   const [newFolderName, setNewFolderName] = useState('')
+
+   // Confirm Delete State
+   const [confirmDeleteFile, setConfirmDeleteFile] = useState<any | null>(null)
 
   // Sort State
   type SortKey = 'name' | 'size' | 'modifyTime'
@@ -280,33 +289,81 @@ export default function App() {
     setTasks(prev => prev.filter(t => t.status !== 'completed' && t.status !== 'error'))
   }
 
-  const handleAddBookmark = async (file: any) => {
-    if (!activeConnection) return
-    const fullPath = currentPath.endsWith('/') ? currentPath + file.name : currentPath + '/' + file.name
-    // Check if bookmark already exists for this path
-    const exists = bookmarks.some(b => b.path === fullPath)
-    if (exists) {
-      toast.info(t('Bookmark exists'))
-      return
-    }
-    const bookmark: Bookmark = {
-      id: uuidv4(),
-      connectionId: activeConnection.id,
-      name: file.name,
-      path: fullPath,
-      isDirectory: file.type === 'd'
-    }
-    await window.electron.store.addBookmark(bookmark)
-    setBookmarks(prev => [...prev, bookmark])
-    toast.success(t('Bookmark added'))
-  }
+   const handleAddBookmark = async (file: any) => {
+     if (!activeConnection) return
+     const fullPath = currentPath.endsWith('/') ? currentPath + file.name : currentPath + '/' + file.name
+     // Check if bookmark already exists for this path
+     const exists = bookmarks.some(b => b.path === fullPath)
+     if (exists) {
+       toast.info(t('Bookmark exists'))
+       return
+     }
+     setPendingBookmarkFile(file)
+     setBookmarkAliasInput('')
+     setShowAddBookmarkDialog(true)
+   }
 
-  const handleDeleteBookmark = async (bookmarkId: string) => {
-    if (!activeConnection) return
-    await window.electron.store.deleteBookmark(activeConnection.id, bookmarkId)
-    setBookmarks(prev => prev.filter(b => b.id !== bookmarkId))
-    toast.success(t('Bookmark removed'))
-  }
+   const handleConfirmAddBookmark = async () => {
+     if (!activeConnection || !pendingBookmarkFile) return
+     const fullPath = currentPath.endsWith('/') ? currentPath + pendingBookmarkFile.name : currentPath + '/' + pendingBookmarkFile.name
+     
+     const bookmark: Bookmark = {
+       id: uuidv4(),
+       connectionId: activeConnection.id,
+       name: pendingBookmarkFile.name,
+       path: fullPath,
+       pathAlias: bookmarkAliasInput || undefined,
+       isDirectory: pendingBookmarkFile.type === 'd'
+     }
+     await window.electron.store.addBookmark(bookmark)
+     setBookmarks(prev => [...prev, bookmark])
+     toast.success(t('Bookmark added'))
+     
+     // Close dialog
+     setShowAddBookmarkDialog(false)
+     setPendingBookmarkFile(null)
+     setBookmarkAliasInput('')
+   }
+
+   const handleCancelAddBookmark = () => {
+     setShowAddBookmarkDialog(false)
+     setPendingBookmarkFile(null)
+     setBookmarkAliasInput('')
+   }
+
+   const handleDeleteBookmark = async (bookmarkId: string) => {
+     if (!activeConnection) return
+     await window.electron.store.deleteBookmark(activeConnection.id, bookmarkId)
+     setBookmarks(prev => prev.filter(b => b.id !== bookmarkId))
+     toast.success(t('Bookmark removed'))
+   }
+
+   const handleEditAlias = (bookmark: Bookmark) => {
+     setEditingAliasBookmark(bookmark)
+     setAliasInputValue(bookmark.pathAlias || '')
+   }
+
+   const handleSaveAlias = async () => {
+     if (!editingAliasBookmark || !activeConnection) return
+     
+     const updatedBookmark: Bookmark = {
+       ...editingAliasBookmark,
+       pathAlias: aliasInputValue || undefined
+     }
+     
+     await window.electron.store.deleteBookmark(activeConnection.id, editingAliasBookmark.id)
+     await window.electron.store.addBookmark(updatedBookmark)
+     
+     setBookmarks(prev => prev.map(b => b.id === editingAliasBookmark.id ? updatedBookmark : b))
+     setEditingAliasBookmark(null)
+     setAliasInputValue('')
+     toast.success(t('Bookmark added'))
+   }
+
+   const handleCancelEditAlias = () => {
+     setEditingAliasBookmark(null)
+     setAliasInputValue('')
+   }
 
   // Sort files: directories first, then by sortKey/sortDir
   const sortedFiles = React.useMemo(() => {
@@ -390,35 +447,62 @@ export default function App() {
                       <div className="text-xs text-muted-foreground font-medium flex items-center px-1 py-0.5">
                         <Tag className="h-3 w-3 mr-1" />{t('Bookmarks')}
                       </div>
-                      {bookmarks.map(bm => (
-                        <div 
-                          key={bm.id}
-                          className="flex items-center justify-between group px-2 py-1 rounded hover:bg-accent/50 cursor-pointer text-xs"
-                          onClick={() => {
-                            if (bm.isDirectory) {
-                              loadFiles(bm.path)
-                            } else {
-                              // Navigate to the parent directory of the bookmarked file
-                              const parent = bm.path.split('/').slice(0, -1).join('/') || '/'
-                              loadFiles(parent)
-                            }
-                          }}
-                          title={bm.path}
-                        >
-                          <div className="flex items-center space-x-1.5 overflow-hidden">
-                            {bm.isDirectory ? <Folder className="h-3 w-3 text-blue-500 flex-shrink-0" /> : <FileIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
-                            <span className="truncate">{bm.name}</span>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-4 w-4 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive flex-shrink-0"
-                            onClick={(e) => { e.stopPropagation(); handleDeleteBookmark(bm.id) }}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
+                       {bookmarks.map(bm => (
+                         <ContextMenu key={bm.id}>
+                           <ContextMenuTrigger>
+                             <div 
+                               className="flex items-center justify-between group px-2 py-1 rounded hover:bg-accent/50 cursor-pointer text-xs"
+                               onClick={() => {
+                                 if (bm.isDirectory) {
+                                   loadFiles(bm.path)
+                                 } else {
+                                   // Navigate to the parent directory of the bookmarked file
+                                   const parent = bm.path.split('/').slice(0, -1).join('/') || '/'
+                                   loadFiles(parent)
+                                 }
+                               }}
+                               title={bm.pathAlias ? `${bm.pathAlias}: ${bm.path}` : bm.path}
+                             >
+                               <div className="flex items-center space-x-1.5 overflow-hidden flex-1">
+                                 {bm.isDirectory ? <Folder className="h-3 w-3 text-blue-500 flex-shrink-0" /> : <FileIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                                 <div className="truncate flex flex-col">
+                                   {bm.pathAlias ? (
+                                     <>
+                                       <span className="truncate font-medium text-xs">{bm.pathAlias}</span>
+                                       <span className="truncate text-muted-foreground text-[10px]">{bm.name}</span>
+                                     </>
+                                   ) : (
+                                     <span className="truncate">{bm.name}</span>
+                                   )}
+                                 </div>
+                               </div>
+                               <Button 
+                                 variant="ghost" 
+                                 size="icon" 
+                                 className="h-4 w-4 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive flex-shrink-0"
+                                 onClick={(e) => { e.stopPropagation(); handleDeleteBookmark(bm.id) }}
+                               >
+                                 <X className="h-3 w-3" />
+                               </Button>
+                             </div>
+                           </ContextMenuTrigger>
+                           <ContextMenuContent>
+                             <ContextMenuItem onClick={() => handleEditAlias(bm)}>
+                               {t('Edit Alias')}
+                             </ContextMenuItem>
+                             {bm.pathAlias && (
+                               <ContextMenuItem onClick={() => {
+                                 const updated: Bookmark = { ...bm, pathAlias: undefined }
+                                 setBookmarks(prev => prev.map(b => b.id === bm.id ? updated : b))
+                                 window.electron.store.deleteBookmark(activeConnection.id, bm.id)
+                                 window.electron.store.addBookmark(updated)
+                               }}>
+                                 {t('Remove Alias')}
+                               </ContextMenuItem>
+                             )}
+                           </ContextMenuContent>
+                         </ContextMenu>
+                       ))}
                     </div>
                   )}
                 </div>
@@ -651,6 +735,62 @@ export default function App() {
             <div className="flex justify-end space-x-2 mt-4">
               <Button variant="outline" onClick={() => setShowNewFolder(false)}>{t('Cancel')}</Button>
               <Button onClick={submitMkdir}>{t('Save')}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Bookmark Dialog */}
+      {showAddBookmarkDialog && pendingBookmarkFile && (
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg shadow-lg border w-80">
+            <h3 className="text-lg font-medium mb-4">{t('Bookmark')}</h3>
+            <div className="space-y-2 mb-4">
+              <p className="text-sm text-muted-foreground font-medium">{pendingBookmarkFile.name}</p>
+              <p className="text-xs text-muted-foreground">{t('Optional alias for this path')}</p>
+              <Input 
+                value={bookmarkAliasInput} 
+                onChange={e => setBookmarkAliasInput(e.target.value)} 
+                placeholder={t('Path Alias')}
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleConfirmAddBookmark()
+                  if (e.key === 'Escape') handleCancelAddBookmark()
+                }}
+              />
+            </div>
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button variant="outline" onClick={handleCancelAddBookmark}>{t('Cancel')}</Button>
+              <Button onClick={handleConfirmAddBookmark}>{t('Save')}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Bookmark Alias Dialog */}
+      {editingAliasBookmark && (
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg shadow-lg border w-80">
+            <h3 className="text-lg font-medium mb-4">{t('Edit Alias')}</h3>
+            <div className="space-y-2 mb-4">
+              <p className="text-sm text-muted-foreground">{t('Optional alias for this path')}</p>
+              <div className="text-xs text-muted-foreground break-all bg-muted p-2 rounded">
+                {editingAliasBookmark.path}
+              </div>
+            </div>
+            <Input 
+              value={aliasInputValue} 
+              onChange={e => setAliasInputValue(e.target.value)} 
+              placeholder={t('Path Alias')}
+              autoFocus
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleSaveAlias()
+                if (e.key === 'Escape') handleCancelEditAlias()
+              }}
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button variant="outline" onClick={handleCancelEditAlias}>{t('Cancel')}</Button>
+              <Button onClick={handleSaveAlias}>{t('Save')}</Button>
             </div>
           </div>
         </div>

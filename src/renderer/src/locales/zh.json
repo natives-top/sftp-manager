@@ -53,5 +53,9 @@
   "Bookmark added": "标签已添加",
   "Bookmark exists": "标签已存在",
   "Bookmark removed": "标签已移除",
-  "Bookmarks": "标签列表"
+  "Bookmarks": "标签列表",
+  "Path Alias": "路径别名",
+  "Optional alias for this path": "为此路径添加可选的别名",
+  "Edit Alias": "编辑别名",
+  "Remove Alias": "删除别名"
 }

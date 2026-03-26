@@ -16,5 +16,6 @@ export type Bookmark = {
   connectionId: string;
   name: string;
   path: string;
+  pathAlias?: string;
   isDirectory: boolean;
 };
