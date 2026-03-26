@@ -52,6 +52,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Cleanup release artifacts
+        run: npm run cleanup
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
