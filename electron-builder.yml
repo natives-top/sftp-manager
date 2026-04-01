@@ -1,0 +1,8 @@
+appId: com.sftp.modernmanager
+productName: 现代化 SFTP 文件管理
+directories:
+  output: release
+win:
+  icon: build/icon.ico
+  target:
+    - nsis

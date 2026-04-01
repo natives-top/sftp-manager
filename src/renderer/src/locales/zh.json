@@ -54,8 +54,13 @@
   "Bookmark exists": "标签已存在",
   "Bookmark removed": "标签已移除",
   "Bookmarks": "标签列表",
-  "Path Alias": "路径别名",
-  "Optional alias for this path": "为此路径添加可选的别名",
-  "Edit Alias": "编辑别名",
-  "Remove Alias": "删除别名"
+   "Path Alias": "路径别名",
+   "Optional alias for this path": "为此路径添加可选的别名",
+   "Edit Alias": "编辑别名",
+   "Remove Alias": "删除别名",
+   "Select All": "全选",
+   "Deselect All": "取消全选",
+   "No files selected": "未选择任何文件",
+   "Download started for": "已为",
+   "files": "个文件开始下载"
 }

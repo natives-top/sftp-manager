@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { Server, Folder, File as FileIcon, ArrowUp, ArrowUpDown, ArrowDownAZ, ArrowUpAZ, RefreshCcw, Download, Upload, Trash2, Plug, Play, Plus, Loader2, FolderPlus, FileUp, XCircle, CheckCircle2, Globe, ChevronUp, ChevronDown, Tag, X } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { TransferTask, Bookmark } from './lib/types'
+import { Check } from 'lucide-react'
 
 export default function App() {
   const { t, i18n } = useTranslation()
@@ -25,6 +26,10 @@ export default function App() {
   const [files, setFiles] = useState<any[]>([])
   const [currentPath, setCurrentPath] = useState('/')
   const [fileLoading, setFileLoading] = useState(false)
+  
+  // File Selection State
+  const [selectedFileIndices, setSelectedFileIndices] = useState<Set<number>>(new Set())
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null)
   
   // Tasks State
   const [tasks, setTasks] = useState<TransferTask[]>([])
@@ -183,6 +188,65 @@ export default function App() {
     } else {
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'error', error: res.error } : t))
     }
+  }
+
+  // File Selection Handlers
+  const handleRowClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (e.ctrlKey || e.metaKey) {
+      // Ctrl/Cmd+Click: Toggle selection
+      const newSelected = new Set(selectedFileIndices)
+      if (newSelected.has(index)) {
+        newSelected.delete(index)
+      } else {
+        newSelected.add(index)
+      }
+      setSelectedFileIndices(newSelected)
+      setLastSelectedIndex(index)
+    } else if (e.shiftKey && lastSelectedIndex !== null) {
+      // Shift+Click: Range selection
+      const start = Math.min(lastSelectedIndex, index)
+      const end = Math.max(lastSelectedIndex, index)
+      const newSelected = new Set(selectedFileIndices)
+      for (let i = start; i <= end; i++) {
+        newSelected.add(i)
+      }
+      setSelectedFileIndices(newSelected)
+    } else {
+      // Single click: Clear previous and select only this
+      setSelectedFileIndices(new Set([index]))
+      setLastSelectedIndex(index)
+    }
+  }
+
+  const handleSelectAll = () => {
+    const allIndices = new Set(sortedFiles.map((_, i) => i))
+    setSelectedFileIndices(allIndices)
+  }
+
+  const handleDeselectAll = () => {
+    setSelectedFileIndices(new Set())
+    setLastSelectedIndex(null)
+  }
+
+  // Batch Download Handler
+  const handleDownloadSelected = async () => {
+    if (selectedFileIndices.size === 0) {
+      toast.error(t('No files selected'))
+      return
+    }
+
+    const selectedFiles = Array.from(selectedFileIndices)
+      .sort((a, b) => a - b)
+      .map(idx => sortedFiles[idx])
+
+    for (const file of selectedFiles) {
+      await handleDownload(file)
+    }
+    
+    handleDeselectAll()
+    toast.success(t('Download started for') + ` ${selectedFiles.length} ${t('files')}`)
   }
 
   const handleUploadFile = async () => {
@@ -594,6 +658,33 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center space-x-2 ml-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleSelectAll}
+                  title={t('Select All')}
+                  disabled={sortedFiles.length === 0}
+                >
+                  <Check className="h-4 w-4 mr-1" /> {t('Select All')}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDeselectAll}
+                  title={t('Deselect All')}
+                  disabled={selectedFileIndices.size === 0}
+                >
+                  {t('Deselect All')}
+                </Button>
+                {selectedFileIndices.size > 0 && (
+                  <Button 
+                    variant="default"
+                    size="sm"
+                    onClick={handleDownloadSelected}
+                  >
+                    <Download className="h-4 w-4 mr-1" /> {t('Download')} ({selectedFileIndices.size})
+                  </Button>
+                )}
                 <Button variant="secondary" onClick={handleUploadFile}><FileUp className="h-4 w-4 mr-2" /> {t('Upload File')}</Button>
                 <Button variant="secondary" onClick={handleUploadFolder}><FolderPlus className="h-4 w-4 mr-2" /> {t('Upload Folder')}</Button>
                 <Button variant="secondary" onClick={handleMkdir}><Plus className="h-4 w-4 mr-2" /> {t('New Folder')}</Button>
@@ -618,6 +709,15 @@ export default function App() {
                   <table className="min-w-full text-sm">
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
+                        <th className="px-3 py-3 w-10">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedFileIndices.size === sortedFiles.length && sortedFiles.length > 0}
+                            onChange={(e) => e.target.checked ? handleSelectAll() : handleDeselectAll()}
+                            className="w-4 h-4 cursor-pointer"
+                            title={t('Select All')}
+                          />
+                        </th>
                         <th className="px-4 py-3 text-left font-medium text-muted-foreground w-1/2 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('name')}>
                           <span className="inline-flex items-center">{t('Name')}<SortIcon column="name" /></span>
                         </th>
@@ -630,13 +730,37 @@ export default function App() {
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {sortedFiles.map((file, i) => (
+                      {sortedFiles.map((file, i) => {
+                        const isSelected = selectedFileIndices.has(i)
+                        return (
                         <ContextMenu key={i}>
                           <ContextMenuTrigger asChild>
                             <tr 
-                              className="hover:bg-accent/50 cursor-pointer group transition-colors"
-                              onDoubleClick={() => handleDoubleClick(file)}
+                              className={`cursor-pointer group transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                              onClick={(e) => handleRowClick(i, e)}
+                              onDoubleClick={(e) => {
+                                if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                                  handleDoubleClick(file)
+                                }
+                              }}
                             >
+                              <td className="px-3 py-3 w-10">
+                                <input 
+                                  type="checkbox" 
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    e.stopPropagation()
+                                    const newSelected = new Set(selectedFileIndices)
+                                    if (e.target.checked) {
+                                      newSelected.add(i)
+                                    } else {
+                                      newSelected.delete(i)
+                                    }
+                                    setSelectedFileIndices(newSelected)
+                                  }}
+                                  className="w-4 h-4 cursor-pointer"
+                                />
+                              </td>
                               <td className="px-4 py-3 flex items-center space-x-3">
                                 {file.type === 'd' ? (
                                   <Folder className="h-5 w-5 text-blue-500 fill-blue-500/20" />
@@ -653,11 +777,21 @@ export default function App() {
                               </td>
                             </tr>
                           </ContextMenuTrigger>
-                          <ContextMenuContent className="w-48">
-                            <ContextMenuItem onClick={() => handleDownload(file)}>
-                              <Download className="mr-2 h-4 w-4" />
-                              <span>{t('Download')}</span>
-                            </ContextMenuItem>
+                          <ContextMenuContent className="w-56">
+                            {selectedFileIndices.size > 1 && (
+                              <>
+                                <ContextMenuItem onClick={handleDownloadSelected}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  <span>{t('Download')} ({selectedFileIndices.size})</span>
+                                </ContextMenuItem>
+                              </>
+                            )}
+                            {selectedFileIndices.size <= 1 && (
+                              <ContextMenuItem onClick={() => handleDownload(file)}>
+                                <Download className="mr-2 h-4 w-4" />
+                                <span>{t('Download')}</span>
+                              </ContextMenuItem>
+                            )}
                             <ContextMenuItem onClick={() => handleAddBookmark(file)}>
                               <Tag className="mr-2 h-4 w-4" />
                               <span>{t('Bookmark')}</span>
@@ -668,7 +802,8 @@ export default function App() {
                             </ContextMenuItem>
                           </ContextMenuContent>
                         </ContextMenu>
-                      ))}
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>

@@ -54,8 +54,13 @@
   "Bookmark exists": "Bookmark already exists",
   "Bookmark removed": "Bookmark removed",
   "Bookmarks": "Bookmarks",
-  "Path Alias": "Path Alias",
-  "Optional alias for this path": "Optional alias for this path",
-  "Edit Alias": "Edit Alias",
-  "Remove Alias": "Remove Alias"
+   "Path Alias": "Path Alias",
+   "Optional alias for this path": "Optional alias for this path",
+   "Edit Alias": "Edit Alias",
+   "Remove Alias": "Remove Alias",
+   "Select All": "Select All",
+   "Deselect All": "Deselect All",
+   "No files selected": "No files selected",
+   "Download started for": "Download started for",
+   "files": "files"
 }
