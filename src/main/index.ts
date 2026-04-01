@@ -65,6 +65,13 @@ app.whenReady().then(() => {
     return { success: false, error: 'No main window' };
   });
 
+  ipcMain.handle('sftp:batchDownload', async (_, remotePaths, taskIds, isDirectories) => {
+    if (mainWindow) {
+      return await sftpService.batchDownload(mainWindow, remotePaths, taskIds, isDirectories);
+    }
+    return { success: false, error: 'No main window' };
+  });
+
   ipcMain.handle('sftp:upload', async (_, localPath, remotePath, taskId) => {
     if (mainWindow) {
       return await sftpService.upload(mainWindow, localPath, remotePath, taskId);

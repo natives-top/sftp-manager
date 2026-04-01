@@ -241,12 +241,52 @@ export default function App() {
       .sort((a, b) => a - b)
       .map(idx => sortedFiles[idx])
 
+    // Prepare arrays for batch download
+    const remotePaths: string[] = []
+    const taskIds: string[] = []
+    const isDirectories: boolean[] = []
+    const newTasks: TransferTask[] = []
+
     for (const file of selectedFiles) {
-      await handleDownload(file)
+      const remotePath = currentPath.endsWith('/') ? currentPath + file.name : currentPath + '/' + file.name
+      const isDir = file.type === 'd'
+      const taskId = uuidv4()
+
+      remotePaths.push(remotePath)
+      taskIds.push(taskId)
+      isDirectories.push(isDir)
+
+      const newTask: TransferTask = {
+        id: taskId,
+        type: 'download',
+        filename: file.name,
+        localPath: '',
+        remotePath: remotePath,
+        status: 'pending',
+        progress: 0,
+        totalSize: file.size || 0,
+        transferredSize: 0
+      }
+      newTasks.push(newTask)
     }
-    
+
+    // Add all tasks at once
+    setTasks(prev => [...newTasks, ...prev])
+
+    // Call batch download
+    const res = await window.electron.sftp.batchDownload(remotePaths, taskIds, isDirectories)
+
+    if (res.success) {
+      setTasks(prev => prev.map(t => 
+        taskIds.includes(t.id) ? { ...t, status: 'completed', progress: 100 } : t
+      ))
+      toast.success(t('Download started for') + ` ${selectedFiles.length} ${t('files')}`)
+    } else if (!res.canceled) {
+      toast.error(res.error || t('Download failed'))
+      setTasks(prev => prev.filter(t => !taskIds.includes(t.id)))
+    }
+
     handleDeselectAll()
-    toast.success(t('Download started for') + ` ${selectedFiles.length} ${t('files')}`)
   }
 
   const handleUploadFile = async () => {

@@ -6,6 +6,7 @@ export interface IElectronAPI {
     disconnect: () => Promise<any>
     list: (path: string) => Promise<any>
     download: (remotePath: string, taskId: string, isDirectory: boolean) => Promise<any>
+    batchDownload: (remotePaths: string[], taskIds: string[], isDirectories: boolean[]) => Promise<any>
     upload: (localPath: string, remotePath: string, taskId: string) => Promise<any>
     delete: (remotePath: string) => Promise<any>
     mkdir: (remotePath: string) => Promise<any>

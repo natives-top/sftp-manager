@@ -169,4 +169,67 @@ export class SftpService {
     if (result.canceled) return [];
     return result.filePaths;
   }
+
+  async batchDownload(window: BrowserWindow, remotePaths: string[], taskIds: string[], isDirectories: boolean[]) {
+    try {
+      // Show directory selection dialog once for all files
+      const result = await dialog.showOpenDialog(window, {
+        properties: ['openDirectory']
+      });
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, canceled: true };
+      }
+
+      const baseDownloadPath = result.filePaths[0];
+
+      // Download each file to the selected directory
+      for (let i = 0; i < remotePaths.length; i++) {
+        const remotePath = remotePaths[i];
+        const taskId = taskIds[i];
+        const isDirectory = isDirectories[i];
+        const fileName = path.basename(remotePath);
+        const localPath = path.join(baseDownloadPath, fileName);
+
+        try {
+          const step = (totalTransferred: number, chunk: number, total: number) => {
+            window.webContents.send('transfer:progress', {
+              id: taskId,
+              progress: total ? (totalTransferred / total) * 100 : 0,
+              transferredSize: totalTransferred,
+              totalSize: total
+            });
+          };
+
+          if (isDirectory) {
+            await this.client.downloadDir(remotePath, localPath);
+            window.webContents.send('transfer:progress', {
+              id: taskId,
+              progress: 100,
+              transferredSize: 1,
+              totalSize: 1
+            });
+          } else {
+            await this.client.fastGet(remotePath, localPath, { step });
+          }
+
+          window.webContents.send('transfer:progress', {
+            id: taskId,
+            progress: 100,
+            transferredSize: 1,
+            totalSize: 1
+          });
+        } catch (error: any) {
+          window.webContents.send('transfer:error', {
+            id: taskId,
+            error: error.message
+          });
+        }
+      }
+
+      return { success: true, baseDownloadPath };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
 }
