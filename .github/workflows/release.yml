@@ -20,17 +20,7 @@ jobs:
             platform: win
             script: dist:win
             artifact_name: sftp-manager-windows
-            artifact_path: release/现代化 SFTP 文件管理-*-*.exe
-          - os: macos-latest
-            platform: mac
-            script: dist:mac
-            artifact_name: sftp-manager-mac
-            artifact_path: release/现代化 SFTP 文件管理-*-mac.dmg
-          - os: ubuntu-latest
-            platform: linux
-            script: dist:linux
-            artifact_name: sftp-manager-linux
-            artifact_path: release/现代化 SFTP 文件管理-*-linux.AppImage
+            artifact_path: release/现代化 SFTP 文件管理-win32-x64
 
     runs-on: ${{ matrix.os }}
 
@@ -87,22 +77,19 @@ jobs:
 
             | 平台 | 文件 | 说明 |
             |------|------|------|
-            | Windows | `现代化 SFTP 文件管理-{version}.exe` | 双击即可运行，无需安装 |
-            | macOS | `现代化 SFTP 文件管理-{version}-mac.dmg` | 打开后拖入 Applications |
-            | Linux | `现代化 SFTP 文件管理-{version}-linux.AppImage` | `chmod +x` 后直接运行 |
+            | Windows | `现代化 SFTP 文件管理-win32-x64/` | 完整应用目录 |
 
             ### 特性
             - 支持 SFTP 文件管理（上传/下载/删除/创建文件夹）
+            - 多选文件批量下载优化 - 单次选择下载目录
             - 路径别名功能 - 为书签添加自定义别名
             - 完整的中英文界面支持
-            - 跨平台支持（Windows/macOS/Linux）
+            - 单机便携应用，无需安装
 
             ### 更新内容
             请查看 [Commits](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) 了解详情。
           files: |
-            artifacts/sftp-manager-windows/*
-            artifacts/sftp-manager-mac/*
-            artifacts/sftp-manager-linux/*
+            artifacts/sftp-manager-windows/**
           draft: false
           prerelease: false
         env:

@@ -1,6 +1,6 @@
 {
   "name": "sftp-modern-manager",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Modern SFTP File Manager MVP",
   "main": "./out/main/index.js",
   "author": "OpenCode",

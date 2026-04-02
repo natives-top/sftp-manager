@@ -15,8 +15,8 @@ async function build() {
       name: '现代化 SFTP 文件管理',
       platform: 'win32',
       arch: 'x64',
-      appVersion: '1.3.0',
-      buildVersion: '1.3.0',
+      appVersion: '1.3.1',
+      buildVersion: '1.3.1',
       icon: path.join(__dirname, '..', 'build/icon.ico'),
       asar: true,
       prune: true,
@@ -38,7 +38,7 @@ async function build() {
     // Create README for users
     const releaseDir = path.join(__dirname, '..', 'release');
     const readmeFile = path.join(releaseDir, 'README.txt');
-    const readmeContent = `现代化 SFTP 文件管理 v1.3.0
+    const readmeContent = `现代化 SFTP 文件管理 v1.3.1
     
 使用说明:
 1. 不要移动文件夹中的任何文件
