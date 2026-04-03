@@ -11,6 +11,7 @@ try {
       disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
       list: (path: string) => ipcRenderer.invoke('sftp:list', path),
       download: (remotePath: string, taskId: string, isDirectory: boolean) => ipcRenderer.invoke('sftp:download', remotePath, taskId, isDirectory),
+      batchDownload: (remotePaths: string[], taskIds: string[], isDirectories: boolean[]) => ipcRenderer.invoke('sftp:batchDownload', remotePaths, taskIds, isDirectories),
       upload: (localPath: string, remotePath: string, taskId: string) => ipcRenderer.invoke('sftp:upload', localPath, remotePath, taskId),
       delete: (remotePath: string) => ipcRenderer.invoke('sftp:delete', remotePath),
       mkdir: (remotePath: string) => ipcRenderer.invoke('sftp:mkdir', remotePath),

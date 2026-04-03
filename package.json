@@ -11,13 +11,44 @@
     "preview": "electron-vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "dist": "npm run build && npm run package",
-    "dist:win": "npm run build && node scripts/build-packager.js",
-    "dist:mac": "npm run build && npm run package-mac",
-    "dist:linux": "npm run build && npm run package-linux",
-    "package": "node scripts/build-packager.js",
-    "package-mac": "echo '暂不支持 macOS 构建'",
-    "package-linux": "echo '暂不支持 Linux 构建'",
+    "dist:win": "npm run build && electron-builder --win portable --x64",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "package": "electron-builder --win portable --x64",
+    "package-mac": "electron-builder --mac",
+    "package-linux": "electron-builder --linux",
     "cleanup": "node scripts/cleanup-release.js"
+  },
+  "build": {
+    "appId": "com.sftp.modernmanager",
+    "productName": "现代化 SFTP 文件管理",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        "portable"
+      ]
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "target": [
+        "dmg"
+      ],
+      "artifactName": "现代化 SFTP 文件管理-${version}-mac.${ext}"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "target": [
+        "AppImage"
+      ],
+      "artifactName": "现代化 SFTP 文件管理-${version}-linux.${ext}"
+    },
+    "portable": {
+      "artifactName": "现代化 SFTP 文件管理-${version}.exe"
+    }
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
@@ -45,7 +76,6 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@electron/packager": "^19.1.0",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
